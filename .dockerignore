@@ -1,5 +1,5 @@
-/docker/php/Dockerfile
-/docker/nginx/Dockerfile
+/services/app/Dockerfile
+/services/server/Dockerfile
 nginx/Dockerfile
 docker-compose.*.yml
 .dockerignore

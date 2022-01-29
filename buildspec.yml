@@ -7,12 +7,12 @@ phases:
       - mv docker-compose.prod.yml docker-compose.yml
   build:
     commands:
-      - docker build --tag $PUBLISHER/$IMAGE_PREFIX-server:latest --target prod ./docker/server
-      - docker build --tag $PUBLISHER/$IMAGE_PREFIX-app:latest --target prod ./docker/app
+      - docker build --tag $PUBLISHER/$PREFIX-server:latest --target prod ./services/server
+      - docker build --tag $PUBLISHER/$PREFIX-app:latest --target prod ./services/app
   post_build:
     commands:
-      - docker push $PUBLISHER/$IMAGE_PREFIX-server:latest
-      - docker push $PUBLISHER/$IMAGE_PREFIXapp:latest
+      - docker push $PUBLISHER/$PREFIX-server:latest
+      - docker push $PUBLISHER/$PREFIX-app:latest
 artifacts:
   files:
     - 'docker-compose.yml'

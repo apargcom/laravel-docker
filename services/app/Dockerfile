@@ -1,4 +1,4 @@
-FROM php:8.0.2-fpm@sha256:b9adc59273171d12e243e4185d83cbdb78eb7a826b9f7f6c1ce82403fd656b97
+FROM php:8.0.2-fpm@sha256:b9adc59273171d12e243e4185d83cbdb78eb7a826b9f7f6c1ce82403fd656b97 AS base
 
 EXPOSE 9000
 
@@ -52,10 +52,9 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* && \
 # Change current user to www
 USER www
 
-# Expose port 9000 and start php-fpm server
-#FOR PRODUCTION composer install
-#composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev 
-CMD composer install && \
+FROM base as prod
+# Expose port 9000 and start php-fpm server 
+CMD composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev  && \
     php artisan key:generate && \
     php artisan storage:link && \
     php artisan cache:clear && \
@@ -64,5 +63,15 @@ CMD composer install && \
     php artisan migrate --force && \
     php artisan auth:clear-resets && \
     php artisan route:cache && \
+    php-fpm
+    
+FROM base as dev
+# Expose port 9000 and start php-fpm server
+CMD composer install && \
+    php artisan key:generate && \
+    php artisan storage:link && \
+    php artisan migrate --force && \
+    php artisan route:clear && \
+    php artisan cache:clear && \
     php-fpm
     
