@@ -1,0 +1,10 @@
+/docker/php/Dockerfile
+/docker/nginx/Dockerfile
+nginx/Dockerfile
+docker-compose.*.yml
+.dockerignore
+.git
+.gitignore
+.env
+.env.example
+buildspec.yml

@@ -1,0 +1,117 @@
+version: '3.8'
+services:
+
+  #PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: ./services/app/Dockerfile
+    image: ${PUBLISHER}/${IMAGE_PREFIX}-app:latest
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    volumes:
+      - ./src:/var/www
+    networks:
+      - app-network
+    depends_on:
+      - db
+      - redis
+    deploy:
+      mode: replicated
+      replicas: ${APP_SCALE}  
+
+  #Nginx Service
+  server:
+    build:
+      context: ./services/server
+    image: ${PUBLISHER}/${IMAGE_PREFIX}-server:latest
+    container_name: server
+    restart: unless-stopped
+    depends_on:
+      - db
+      - redis
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./src:/var/www
+    networks:
+      - app-network
+
+  #MySQL Service
+  db:
+    image: mariadb:10.3
+    container_name: db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    networks:
+      - app-network
+    volumes: 
+      - dbdata:/var/lib/mysql/
+      - ./services/db/my.cnf:/etc/mysql/my.cnf
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: root
+
+  #Redis Service
+  redis:
+    image: redis:6.2-alpine
+    container_name: redis
+    volumes:
+      - redisdata:/data
+    networks:
+      - app-network
+    ports:
+      - "6379:6379"
+
+  #PhpMyAdmin Service (URL - localhost:8080)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ${DB_USERNAME}
+      PMA_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - '8080:80'
+    depends_on:
+      - db
+    networks:
+      - app-network
+    volumes: 
+      - /sessions
+
+  # Redis Commander
+  redis-commander:
+    container_name: redis-commander
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+    - REDIS_HOSTS=redis
+    ports:
+    - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+#Volumes
+volumes:
+  dbdata:
+    driver: local
+  redisdata:
+    driver: local

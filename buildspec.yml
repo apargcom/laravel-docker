@@ -1,0 +1,18 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      #- docker login -u $DOCKER_USERNAME -p $DOCKER_ACCESS
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - mv docker-compose.prod.yml docker-compose.yml
+  build:
+    commands:
+      - docker build --tag $PUBLISHER/$IMAGE_PREFIX-server:latest --target prod ./docker/server
+      - docker build --tag $PUBLISHER/$IMAGE_PREFIX-app:latest --target prod ./docker/app
+  post_build:
+    commands:
+      - docker push $PUBLISHER/$IMAGE_PREFIX-server:latest
+      - docker push $PUBLISHER/$IMAGE_PREFIXapp:latest
+artifacts:
+  files:
+    - 'docker-compose.yml'
