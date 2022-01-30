@@ -1,5 +1,7 @@
 FROM php:8.0.2-fpm@sha256:b9adc59273171d12e243e4185d83cbdb78eb7a826b9f7f6c1ce82403fd656b97 AS base
 
+LABEL maintainer="Aparg"
+
 EXPOSE 9000
 
 # Set working directory

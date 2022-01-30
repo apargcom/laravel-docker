@@ -47,7 +47,9 @@ services:
 
   #MySQL Service
   db:
-    image: mariadb:10.3
+    build:
+      context: ./services/db
+    image: ${PUBLISHER}/${PREFIX}-db:latest
     container_name: ${PREFIX}-db
     restart: unless-stopped
     ports:
@@ -56,7 +58,6 @@ services:
       - app-network
     volumes: 
       - dbdata:/var/lib/mysql/
-      - ./services/db/my.cnf:/etc/mysql/my.cnf
     healthcheck:
       test: ["CMD", "mysqladmin", "-u$DB_USERNAME", "-p$DB_PASSWORD",  "ping"]
       retries: 10
@@ -70,8 +71,9 @@ services:
 
   #Redis Service
   redis:
-    image: redis:6.2-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    build:
+      context: ./services/redis
+    image: ${PUBLISHER}/${PREFIX}-redis:latest
     container_name: ${PREFIX}-redis
     volumes:
       - redisdata:/data
@@ -80,6 +82,8 @@ services:
       retries: 10
       start_period: 10s
       interval: 1s
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     networks:
       - app-network
     ports:
