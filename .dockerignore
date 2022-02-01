@@ -1,5 +1,7 @@
 /services/app/Dockerfile
 /services/server/Dockerfile
+/services/redis/Dockerfile
+/services/db/Dockerfile
 nginx/Dockerfile
 docker-compose.*.yml
 .dockerignore
