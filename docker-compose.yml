@@ -9,9 +9,6 @@ services:
       target: dev
     image: ${PUBLISHER}/${PREFIX}-app:latest
     restart: unless-stopped
-    environment:
-      SERVICE_NAME: app
-      SERVICE_TAGS: dev
     volumes:
       - ./src:/var/www
     networks:

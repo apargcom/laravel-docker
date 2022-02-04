@@ -7,10 +7,7 @@ EXPOSE 9000
 # Set working directory
 WORKDIR /var/www
 
-# Copy code, composer and php config
-COPY /src/composer.lock /src/composer.json /var/www/
-COPY /services/app/local.ini /usr/local/etc/php/conf.d/local.ini
-COPY --chown=www:www-data /src /var/www
+
 
 # Add php ext repo
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
@@ -32,32 +29,42 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     lua-zlib-dev \
-    libmemcached-dev
+    libmemcached-dev 
 
 # Install Redis
 RUN pecl install redis && docker-php-ext-enable redis
 
+# Install supervisor
+#RUN apt-get install -y supervisor
+
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Install supervisor
-# COPY /docker/supervisor/supervisor.conf /etc/supervisord.con
-# RUN apt-get install -y supervisor
-# RUN /usr/bin/supervisord -c /etc/supervisord.conf
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Clear cache, add laravel user, add root to www group
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    groupadd -g 1000 www && \
-    useradd -u 1000 -ms /bin/bash -g www www && \
-    chmod -R ug+w /var/www/storage
+# Add user for laravel application
+RUN groupadd -g 1000 www
+RUN useradd -u 1000 -ms /bin/bash -g www www
+
+# Copy code to /var/www
+COPY --chown=www:www ./src /var/www
+
+# add root to www group
+RUN chmod -R ug+w /var/www/storage
+
+COPY /services/app/php.ini /usr/local/etc/php/conf.d/app.ini
+
+# PHP Error Log Files
+RUN mkdir /var/log/php
+RUN touch /var/log/php/errors.log && chmod 777 /var/log/php/errors.log
 
 # Change current user to www
 USER www
 
-FROM base as prod
-# Expose port 9000 and start php-fpm server 
-CMD composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev  && \
-    php artisan key:generate && \
+FROM base AS prod
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+CMD php artisan key:generate && \
     php artisan storage:link && \
     php artisan cache:clear && \
     php artisan config:cache && \
@@ -67,13 +74,11 @@ CMD composer install --no-interaction --prefer-dist --optimize-autoloader --no-d
     php artisan route:cache && \
     php-fpm
     
-FROM base as dev
-# Expose port 9000 and start php-fpm server
-CMD composer install && \
-    php artisan key:generate && \
+FROM base AS dev
+RUN composer install
+CMD php artisan key:generate && \
     php artisan storage:link && \
     php artisan migrate --force && \
     php artisan route:clear && \
     php artisan cache:clear && \
     php-fpm
-    
