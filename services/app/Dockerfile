@@ -63,8 +63,8 @@ RUN touch /var/log/php/errors.log && chmod 777 /var/log/php/errors.log
 USER www
 
 FROM base AS prod
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-CMD php artisan key:generate && \
+CMD composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev && \
+	php artisan key:generate && \
     php artisan storage:link && \
     php artisan cache:clear && \
     php artisan config:cache && \
@@ -75,8 +75,8 @@ CMD php artisan key:generate && \
     php-fpm
     
 FROM base AS dev
-RUN composer install
-CMD php artisan key:generate && \
+CMD composer install && \
+	php artisan key:generate && \
     php artisan storage:link && \
     php artisan migrate --force && \
     php artisan route:clear && \
