@@ -53,7 +53,8 @@ COPY --chown=www:www ./src /var/www
 # add root to www group
 RUN chmod -R ug+w /var/www/storage
 
-COPY /services/app/php.ini /usr/local/etc/php/conf.d/app.ini
+COPY /services/app/php.ini /usr/local/etc/php/conf.d/zzz-php.ini
+COPY /services/app/fpm.conf /usr/local/etc/php-fpm.d/zzz-fpm.conf
 
 # PHP Error Log Files
 RUN mkdir /var/log/php
