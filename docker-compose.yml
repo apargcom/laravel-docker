@@ -8,7 +8,7 @@ services:
       dockerfile: ./services/app/Dockerfile
       target: dev
     image: ${PUBLISHER}/${PREFIX}-app:latest
-    restart: on-failure
+    restart: always
     volumes:
       - ./src:/var/www
     networks:
@@ -36,7 +36,7 @@ services:
       target: dev
     image: ${PUBLISHER}/${PREFIX}-server:latest
     container_name: ${PREFIX}-server
-    restart: on-failure
+    restart: always
     depends_on:
       app:
         condition: service_healthy
@@ -59,7 +59,7 @@ services:
       context: ./services/db
     image: ${PUBLISHER}/${PREFIX}-db:latest
     container_name: ${PREFIX}-db
-    restart: on-failure
+    restart: always
     ports:
       - "3306"
     networks:
@@ -83,7 +83,7 @@ services:
       context: ./services/redis
     image: ${PUBLISHER}/${PREFIX}-redis:latest
     container_name: ${PREFIX}-redis
-    restart: on-failure
+    restart: always
     volumes:
       - redisdata:/data
     healthcheck:
@@ -104,7 +104,7 @@ services:
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: ${PREFIX}-phpmyadmin
-    restart: on-failure
+    restart: always
     environment:
       PMA_HOST: db
       PMA_PORT: 3306
@@ -124,7 +124,7 @@ services:
   redis-commander:
     container_name: ${PREFIX}-redis-commander
     image: rediscommander/redis-commander:latest
-    restart: on-failure
+    restart: always
     environment:
       - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD}
     ports:
