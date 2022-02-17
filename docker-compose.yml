@@ -1,18 +1,23 @@
-version: '3.8'
+version: "3.8"
 services:
 
-  #PHP Service
+  # PHP Service
   app:
     build:
       context: .
       dockerfile: ./services/app/Dockerfile
       target: dev
     image: ${PUBLISHER}/${PREFIX}-app:latest
-    restart: unless-stopped
+    restart: on-failure
     volumes:
       - ./src:/var/www
     networks:
       - app-network
+    healthcheck:
+      test: pidof php-fpm
+      retries: 10
+      start_period: 10s
+      interval: 1s
     depends_on:
       redis:
         condition: service_healthy
@@ -22,18 +27,19 @@ services:
       - "9000"
     deploy:
       mode: replicated
-      replicas: ${APP_SCALE}  
+      replicas: ${APP_SCALE}
 
-  #Nginx Service
+  # Nginx Service
   server:
     build:
       context: ./services/server
       target: dev
     image: ${PUBLISHER}/${PREFIX}-server:latest
     container_name: ${PREFIX}-server
-    restart: unless-stopped
+    restart: on-failure
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
@@ -41,22 +47,27 @@ services:
       - ./src:/var/www
     networks:
       - app-network
+    healthcheck:
+      test: nginx -t || exit 1
+      retries: 10
+      start_period: 10s
+      interval: 1s
 
-  #MySQL Service
+  # MySQL Service
   db:
     build:
       context: ./services/db
     image: ${PUBLISHER}/${PREFIX}-db:latest
     container_name: ${PREFIX}-db
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - "3306"
     networks:
       - app-network
-    volumes: 
+    volumes:
       - dbdata:/var/lib/mysql/
     healthcheck:
-      test: ["CMD", "mysqladmin", "-u$DB_USERNAME", "-p$DB_PASSWORD",  "ping"]
+      test: mysqladmin -u$DB_USERNAME -p$DB_PASSWORD ping
       retries: 10
       start_period: 10s
       interval: 1s
@@ -66,16 +77,17 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_RANDOM_ROOT_PASSWORD: yes
 
-  #Redis Service
+  # Redis Service
   redis:
     build:
       context: ./services/redis
     image: ${PUBLISHER}/${PREFIX}-redis:latest
     container_name: ${PREFIX}-redis
+    restart: on-failure
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: redis-cli ping
       retries: 10
       start_period: 10s
       interval: 1s
@@ -86,10 +98,13 @@ services:
     ports:
       - "6379"
 
+  #FOR DEVELOPMENT ONLY
+
   #PhpMyAdmin Service (URL - localhost:8080)
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: ${PREFIX}-phpmyadmin
+    restart: on-failure
     environment:
       PMA_HOST: db
       PMA_PORT: 3306
@@ -99,32 +114,32 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: root
     ports:
-      - '8080:80'
+      - "8080:80"
     depends_on:
       - db
     networks:
       - app-network
 
-  # Redis Commander
+  # Redis Commander (URL - localhost:8081)
   redis-commander:
     container_name: ${PREFIX}-redis-commander
     image: rediscommander/redis-commander:latest
-    restart: always
+    restart: on-failure
     environment:
       - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD}
     ports:
-    - "8081:8081"
+      - "8081:8081"
     depends_on:
       - redis
     networks:
       - app-network
 
-#Docker Networks
+# Docker Networks
 networks:
   app-network:
     name: ${PREFIX}-network
     driver: bridge
-#Volumes
+# Volumes
 volumes:
   dbdata:
     name: ${PREFIX}-dbdata
