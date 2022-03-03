@@ -143,6 +143,9 @@ networks:
     driver: bridge
 # Volumes
 volumes:
+  appdata:
+    name: ${PREFIX}-appdata
+    driver: local
   dbdata:
     name: ${PREFIX}-dbdata
     driver: local
